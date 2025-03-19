@@ -3,33 +3,50 @@ import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User 
 import { getStorage } from "firebase/storage";
 import { create } from "zustand";
 
-// Add error handling for missing environment variables
-const requiredEnvVars = [
-  'VITE_FIREBASE_API_KEY',
-  'VITE_FIREBASE_PROJECT_ID',
-  'VITE_FIREBASE_APP_ID'
-] as const;
+// Verify environment variables are properly loaded
+const checkEnvVars = () => {
+  const requiredVars = {
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID
+  };
 
-for (const envVar of requiredEnvVars) {
-  if (!import.meta.env[envVar]) {
-    throw new Error(`Missing required environment variable: ${envVar}`);
+  const missingVars = Object.entries(requiredVars)
+    .filter(([_, value]) => !value)
+    .map(([key]) => key);
+
+  if (missingVars.length > 0) {
+    throw new Error(`Missing required Firebase configuration: ${missingVars.join(', ')}`);
   }
-}
 
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.appspot.com`,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
+  return requiredVars;
 };
 
-console.log('Initializing Firebase with config:', {
+const envVars = checkEnvVars();
+
+const firebaseConfig = {
+  apiKey: envVars.apiKey,
+  authDomain: `${envVars.projectId}.firebaseapp.com`,
+  projectId: envVars.projectId,
+  storageBucket: `${envVars.projectId}.appspot.com`,
+  appId: envVars.appId
+};
+
+console.log('Firebase Configuration:', {
   projectId: firebaseConfig.projectId,
-  authDomain: firebaseConfig.authDomain
+  authDomain: firebaseConfig.authDomain,
+  configValid: !!firebaseConfig.apiKey && !!firebaseConfig.appId
 });
 
-const app = initializeApp(firebaseConfig);
+let app;
+try {
+  app = initializeApp(firebaseConfig);
+  console.log('Firebase initialized successfully');
+} catch (error) {
+  console.error('Error initializing Firebase:', error);
+  throw error;
+}
+
 const auth = getAuth(app);
 const storage = getStorage(app);
 
@@ -46,9 +63,13 @@ export const useAuth = create<AuthState>((set) => ({
   signIn: async () => {
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-    } catch (error) {
+      const result = await signInWithPopup(auth, provider);
+      console.log('Sign in successful:', result.user.email);
+    } catch (error: any) {
       console.error('Error signing in:', error);
+      if (error.code === 'auth/api-key-not-valid') {
+        console.error('Invalid API key. Please check your Firebase configuration.');
+      }
       throw error;
     }
   },
@@ -56,6 +77,7 @@ export const useAuth = create<AuthState>((set) => ({
     try {
       await auth.signOut();
       set({ user: null });
+      console.log('Sign out successful');
     } catch (error) {
       console.error('Error signing out:', error);
       throw error;
@@ -66,6 +88,7 @@ export const useAuth = create<AuthState>((set) => ({
 // Setup auth listener
 onAuthStateChanged(auth, (user) => {
   useAuth.setState({ user, loading: false });
+  console.log('Auth state changed:', user ? 'User logged in' : 'User logged out');
 });
 
 export { app, auth, storage };
