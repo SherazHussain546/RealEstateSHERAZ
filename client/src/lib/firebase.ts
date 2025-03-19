@@ -69,6 +69,9 @@ export const useAuth = create<AuthState>((set) => ({
       console.error('Error signing in:', error);
       if (error.code === 'auth/api-key-not-valid') {
         console.error('Invalid API key. Please check your Firebase configuration.');
+      } else if (error.code.includes('identitytoolkit')) {
+        console.error('Identity Toolkit API error. Please enable Identity Toolkit API in Google Cloud Console.');
+        throw new Error('Firebase Authentication is not properly configured. Please contact the administrator.');
       }
       throw error;
     }
