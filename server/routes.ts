@@ -5,6 +5,7 @@ import { insertPropertySchema, insertViewingSchema, insertUserSchema, loginSchem
 import bcrypt from "bcryptjs";
 import session from "express-session";
 import memorystore from "memorystore";
+import { GooglePlacesService } from "./services/google-places-service";
 
 const MemoryStore = memorystore(session);
 
@@ -21,6 +22,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       cookie: { secure: process.env.NODE_ENV === "production" }
     })
   );
+
+  // Add this route inside registerRoutes function, before the existing routes
+  app.get("/api/properties/fetch", async (req, res) => {
+    try {
+      const service = new GooglePlacesService();
+      // Default to Dublin city center coordinates
+      const properties = await service.searchProperties("real estate for sale", {
+        lat: 53.3498,
+        lng: -6.2603
+      });
+      res.json(properties);
+    } catch (error: any) {
+      console.error("Error fetching properties:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
 
   // Authentication routes
   app.post("/api/auth/signup", async (req, res) => {
