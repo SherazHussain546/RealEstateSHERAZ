@@ -3,6 +3,19 @@ import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User 
 import { getStorage } from "firebase/storage";
 import { create } from "zustand";
 
+// Add error handling for missing environment variables
+const requiredEnvVars = [
+  'VITE_FIREBASE_API_KEY',
+  'VITE_FIREBASE_PROJECT_ID',
+  'VITE_FIREBASE_APP_ID'
+] as const;
+
+for (const envVar of requiredEnvVars) {
+  if (!import.meta.env[envVar]) {
+    throw new Error(`Missing required environment variable: ${envVar}`);
+  }
+}
+
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
@@ -11,9 +24,14 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-export const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const storage = getStorage(app);
+console.log('Initializing Firebase with config:', {
+  projectId: firebaseConfig.projectId,
+  authDomain: firebaseConfig.authDomain
+});
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const storage = getStorage(app);
 
 interface AuthState {
   user: User | null;
@@ -26,12 +44,22 @@ export const useAuth = create<AuthState>((set) => ({
   user: null,
   loading: true,
   signIn: async () => {
-    const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+    } catch (error) {
+      console.error('Error signing in:', error);
+      throw error;
+    }
   },
   signOut: async () => {
-    await auth.signOut();
-    set({ user: null });
+    try {
+      await auth.signOut();
+      set({ user: null });
+    } catch (error) {
+      console.error('Error signing out:', error);
+      throw error;
+    }
   }
 }));
 
@@ -39,3 +67,5 @@ export const useAuth = create<AuthState>((set) => ({
 onAuthStateChanged(auth, (user) => {
   useAuth.setState({ user, loading: false });
 });
+
+export { app, auth, storage };
