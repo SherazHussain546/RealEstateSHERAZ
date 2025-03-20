@@ -7,6 +7,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 import path from 'path';
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+
+// Fix for __dirname in ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 app.use((req, res, next) => {
   const start = Date.now();
