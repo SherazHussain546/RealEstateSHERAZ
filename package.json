@@ -78,8 +78,7 @@
     "ws": "^8.18.0",
     "zod": "^3.23.8",
     "zod-validation-error": "^3.4.0",
-    "zustand": "^5.0.3",
-    "vite": "^4.5.0"
+    "zustand": "^5.0.3"
   },
   "devDependencies": {
     "@babel/core": "^7.26.10",
@@ -105,12 +104,17 @@
     "tailwindcss": "^3.4.14",
     "tsx": "^4.19.1",
     "typescript": "5.6.3",
+    "vite": "^6.2.2"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"
   },
-  "engines": {
+    "engines": {
     "node": "20.x",
     "npm": "10.x"
   }
 }
+
+
+
+
