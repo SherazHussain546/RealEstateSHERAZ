@@ -6,13 +6,13 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-import path from 'path';
 import { fileURLToPath } from "url";
+import path from 'path';
 import { dirname } from "path";
 
 // Fix for __dirname in ESM
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = path.dirname(__filename);
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -67,7 +67,7 @@ app.use((req, res, next) => {
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-  
+
  const PORT = 5000;
   app.listen(PORT, 'localhost', () => {
     console.log(`Server running on http://localhost:${PORT}`);
